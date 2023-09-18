@@ -37,8 +37,8 @@ int main() {
         
         char* command = commandParts[0];
         char* arguements[totalParts];
-        for(int i = 1; i < totalParts; i++) {
-            arguements[i-1] = commandParts[i];
+        for(int i = 0; i < totalParts; i++) {
+            arguements[i] = commandParts[i];
         }
 
         if(!strcmp("exit", userCommand)) {
@@ -48,7 +48,7 @@ int main() {
             if(totalParts != 3) {
                 printf("Path Not Formatted Correctly!");
             } else {
-                commandPrompt = changeDirectories(commandPrompt, arguements[0], netId);
+                commandPrompt = changeDirectories(commandPrompt, arguements[1], netId);
             }
         } else {   
             executeCommand(command, arguements);
@@ -126,8 +126,12 @@ char* getCurrentWorkingDirectory() {
     return command;
 }
 
+void printToken(char** tokens) {
+    for (int i = 0; tokens[i] != NULL; i++) {
+        printf("%s\n", tokens[i]);
+    }
+}
 char** parseInput(char* userCommand, int* partsCount) {
-
     int token_count = 0; 
     char *token; 
     char** tokens = NULL;
@@ -148,29 +152,29 @@ char** parseInput(char* userCommand, int* partsCount) {
 int executeCommand(char* command, char* arguements[]) {
     pid_t pid = fork();
     if(pid < 0) {
-        perror("fork error!");
+        perror("fork error:");
         exit(pid);
     } else if (pid == 0) {
-        int status = execvp(command, arguements);
-        perror("execvp failed");
-        exit(status);
+        int exec_result = execvp(command, arguements);
+        perror("execvp failed:");
+        _exit(exec_result);
     } else {
         int status;
         wait(&status);
         if (!WIFEXITED(status)) {
             printf("Child process did not exit normally\n");
+            return -1;
+        } else {
+            return WEXITSTATUS(status); 
         }
     }
-    return 0;
 }
 
 char* changeDirectories(char* commandPrompt, char* path, char* netId) {
     if (chdir(path) != 0) {
-        perror("chdir");
-        return NULL;
-    } else {
-        return getCommandPrompt(netId);
+        perror("change directory error!"); 
     }
+    return getCommandPrompt(netId);
 }
 
 
