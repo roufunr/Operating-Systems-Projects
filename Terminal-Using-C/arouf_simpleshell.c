@@ -62,6 +62,7 @@ int main() {
     return 0;
 }
 // methods definition
+
 char* getUserCommand() {
     size_t maxCommandSize = 1024;
     char rawCommand[maxCommandSize];
@@ -74,6 +75,7 @@ char* getUserCommand() {
     strcpy(command, rawCommand);
     return command;
 }
+
 void trim(char *sentence) {
     if (sentence == NULL) {
         return;
@@ -95,6 +97,7 @@ void trim(char *sentence) {
     }
     sentence[end - start + 1] = '\0';
 }
+
 char* getCommandPrompt(char *netId) {
     char *cwd = getCurrentWorkingDirectory();
     char *promptText = (char *)malloc((strlen(cwd) + strlen(netId) + 2) * sizeof(char));
@@ -107,6 +110,7 @@ char* getCommandPrompt(char *netId) {
     free(cwd);
     return promptText;
 }
+
 char* getCurrentWorkingDirectory() {
     char *command;
     size_t size = 512; // You can change the command size as needed
@@ -121,6 +125,7 @@ char* getCurrentWorkingDirectory() {
     }
     return command;
 }
+
 char** parseInput(char* userCommand, int* partsCount) {
 
     int token_count = 0; 
@@ -139,28 +144,26 @@ char** parseInput(char* userCommand, int* partsCount) {
     (*partsCount) = token_count;
     return tokens;
 }
+
 int executeCommand(char* command, char* arguements[]) {
     pid_t pid = fork();
     if(pid < 0) {
-        perror("Fork failed");
-        return -1;
-    }
-
-    if (pid == 0) {
-        execvp(command, arguements);
-        perror("Execvp failed");
-        exit(1);
+        perror("fork error!");
+        exit(pid);
+    } else if (pid == 0) {
+        int status = execvp(command, arguements);
+        perror("execvp failed");
+        exit(status);
     } else {
         int status;
         wait(&status);
-        if (WIFEXITED(status)) {
-            // printf("Child process exited with status %d\n", WEXITSTATUS(status));
-        } else {
+        if (!WIFEXITED(status)) {
             printf("Child process did not exit normally\n");
         }
     }
     return 0;
 }
+
 char* changeDirectories(char* commandPrompt, char* path, char* netId) {
     if (chdir(path) != 0) {
         perror("chdir");
