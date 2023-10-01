@@ -8,11 +8,8 @@
 #include <errno.h> 
 #include <sys/stat.h> 
 #include <sys/time.h>
-#include <pthread.h>
-
-int readFile(char[], int[]);
-int getDataSize(char *);
-
+#include <pthread.h> // for thread
+#include <math.h> // used atan() from this header for giving some trouble to cpu
 typedef struct _thread_data_t { 
     const int *data; 
     int startInd; 
@@ -20,6 +17,10 @@ typedef struct _thread_data_t {
     pthread_mutex_t *lock; 
     long long int *totalSum; 
 } thread_data_t;
+
+int readFile(char[], int[]);
+void * arraySum(void *);
+void compute();
 
 int main(int argc, char* argv[]) {
     if(argc != 3) {
@@ -32,45 +33,90 @@ int main(int argc, char* argv[]) {
     char* number_of_thread_in_str = argv[2];
     int number_of_thread = atoi(number_of_thread_in_str);
     
-    // get the data capacity from filename
-    int capacity = getDataSize(data_filename);
-    if (capacity == 0) {
-        printf("There is an issue of naming the data file!\n");
-        return -1;
-    }
+    int capacity = 1000 * 1000 * 1000; // assuming this is the highest size of the dynamic array
     
     // read all data from file and set to dynamic array
     int * data = (int *)malloc(capacity * sizeof(int));
-    if(readFile(data_filename, data) == -1) {
+    int data_size = readFile(data_filename, data);
+    if(data_size == -1) {
+        return -1;
+    }
+
+    if(data_size < number_of_thread) {
+        printf("Too many threads requested\n");
+        return -1;
+    }
+
+    printf("data size: %d\n", data_size);
+    
+    struct timeval start_time, end_time;
+    // Get the current time
+    if (gettimeofday(&start_time, NULL) == -1) {
+        perror("gettimeofday");
+        return -1;
+    }
+    long long int total_sum;
+    total_sum = 0;
+    pthread_t threads[number_of_thread];
+    thread_data_t thread_data[number_of_thread];
+    pthread_mutex_t sumMutex;
+    if (pthread_mutex_init(&sumMutex, NULL) != 0) {
+        perror("Mutex initialization failed");
         return -1;
     }
     
-
-}
-
-int getDataSize(char * data_filename) {
-    int capacity;
-    if(!strcmp("oneThousand.txt", data_filename)) 
-    {
-        capacity = 1000;
-    } 
-    else if (!strcmp("oneMillion.txt", data_filename))
-    {
-        capacity = 1000 * 1000;
-    } 
-    else if (!strcmp("oneHundredThousand.txt", data_filename)) // for the sake of covering more input cases
-    {
-        capacity = 100 * 1000;
-    } 
-    else if (!strcmp("fiveHundredThousand.txt", data_filename)) // for the sake of covering more input cases
-    {
-        capacity = 5 * 100 * 1000;
-    } 
-    else 
-    {
-        capacity = 0; // edge case
+    // chunk 0 to chunk N - 1
+    for(int i = 0; i < number_of_thread - 1; i++) {
+        thread_data[i].data = data;
+        thread_data[i].startInd = i * (data_size / number_of_thread); // inclusive
+        thread_data[i].endInd = (i + 1) * (data_size / number_of_thread); // exclusive
+        thread_data[i].totalSum = &total_sum;
+        thread_data[i].lock = &sumMutex;
+        pthread_create(&threads[i], NULL, arraySum, &thread_data[i]);
     }
-    return capacity;
+    // chunk N
+    thread_data[number_of_thread - 1].data = data;
+    thread_data[number_of_thread - 1].startInd = (number_of_thread - 1) * (data_size / number_of_thread); // inclusive
+    thread_data[number_of_thread - 1].endInd = data_size; // exclusive
+    thread_data[number_of_thread - 1].totalSum = &total_sum;
+    thread_data[number_of_thread - 1].lock = &sumMutex;
+    pthread_create(&threads[number_of_thread - 1], NULL, arraySum, &thread_data[number_of_thread - 1]);
+
+    // join all thread with main thread
+    for(int i = 0; i < number_of_thread; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    // Get the current time
+    if (gettimeofday(&end_time, NULL) == -1) {
+        perror("gettimeofday");
+        return -1;
+    }
+    printf("Star time: %ld\n", start_time.tv_usec);
+    printf("End time: %ld\n", end_time.tv_usec);
+    double elapsed_time = (end_time.tv_sec - start_time.tv_sec) * 1000.0 + (end_time.tv_usec - start_time.tv_usec) / 1000.0;
+    printf("Total sum: %lld\n", total_sum);
+    printf("Elapsed time: %lf ms\n", elapsed_time);
+    pthread_exit(NULL);
+}
+void compute() {
+    long long total_sum = 0;
+    for (long long i = 0; i < 1000LL; i++) {
+        total_sum += i;
+    }
+}
+void * arraySum(void * arg) {
+    thread_data_t *thread_data = (thread_data_t *)arg;
+    long long int threadSum = 0;
+    for(int i = thread_data->startInd; i < thread_data->endInd; i++) {
+        threadSum += thread_data->data[i];
+        // added a cpu intensive function
+        compute();
+    }
+    pthread_mutex_lock(thread_data->lock);
+    *(thread_data->totalSum) += threadSum;
+    pthread_mutex_unlock(thread_data->lock);
+    pthread_exit(NULL);
 }
 int readFile(char filename[], int data[]) {
     FILE *datafile;
@@ -86,5 +132,7 @@ int readFile(char filename[], int data[]) {
         int number = atoi(buffer);
         data[idx++] = number;
     }
-    return 0; // successfully read the whole file
+
+    int number_of_values = idx;
+    return number_of_values; // successfully read the whole file
 }
