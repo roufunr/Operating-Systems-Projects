@@ -99,6 +99,7 @@ int main(int argc, char* argv[]) {
     printf("Elapsed time: %lf ms\n", elapsed_time);
     pthread_exit(NULL);
 }
+
 void compute() {
     long long total_sum = 0;
     for (long long i = 0; i < 1000LL; i++) {
