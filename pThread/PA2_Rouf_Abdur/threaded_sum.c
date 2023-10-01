@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
     
-    // chunk 0 to chunk N - 1
+    // chunk 1 to chunk N - 1
     for(int i = 0; i < number_of_thread - 1; i++) {
         thread_data[i].data = data;
         thread_data[i].startInd = i * (data_size / number_of_thread); // inclusive
@@ -92,8 +92,8 @@ int main(int argc, char* argv[]) {
         perror("gettimeofday");
         return -1;
     }
-    printf("Star time: %ld\n", start_time.tv_usec);
-    printf("End time: %ld\n", end_time.tv_usec);
+    // printf("Star time: %ld\n", start_time.tv_usec);
+    // printf("End time: %ld\n", end_time.tv_usec);
     double elapsed_time = (end_time.tv_sec - start_time.tv_sec) * 1000.0 + (end_time.tv_usec - start_time.tv_usec) / 1000.0;
     printf("Total sum: %lld\n", total_sum);
     printf("Elapsed time: %lf ms\n", elapsed_time);
@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
 
 void compute() {
     long long total_sum = 0;
-    for (long long i = 0; i < 1000LL; i++) {
+    for (long long i = 0; i < 300000LL; i++) {
         total_sum += i;
     }
 }
@@ -115,7 +115,7 @@ void * arraySum(void * arg) {
         compute();
     }
     pthread_mutex_lock(thread_data->lock);
-    *(thread_data->totalSum) += threadSum;
+    *(thread_data->totalSum) += threadSum; //critical section
     pthread_mutex_unlock(thread_data->lock);
     pthread_exit(NULL);
 }
@@ -128,7 +128,6 @@ int readFile(char filename[], int data[]) {
     }
     char buffer[200];
     int idx = 0;
-    int capacity = 1000;
     while (fscanf(datafile, "%s", buffer) != EOF) {
         int number = atoi(buffer);
         data[idx++] = number;
