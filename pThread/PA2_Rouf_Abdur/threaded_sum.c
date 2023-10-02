@@ -20,7 +20,8 @@ typedef struct _thread_data_t {
 
 int readFile(char[], int[]);
 void * arraySum(void *);
-void compute();
+void extra_load();
+void * arraySumEXTRA(void *);
 
 int main(int argc, char* argv[]) {
     if(argc != 3) {
@@ -73,6 +74,7 @@ int main(int argc, char* argv[]) {
         thread_data[i].totalSum = &total_sum;
         thread_data[i].lock = &sumMutex;
         pthread_create(&threads[i], NULL, arraySum, &thread_data[i]);
+        //pthread_create(&threads[i], NULL, arraySumEXTRA, &thread_data[i]);
     }
     // chunk N
     thread_data[number_of_thread - 1].data = data;
@@ -95,30 +97,46 @@ int main(int argc, char* argv[]) {
     // printf("Star time: %ld\n", start_time.tv_usec);
     // printf("End time: %ld\n", end_time.tv_usec);
     double elapsed_time = (end_time.tv_sec - start_time.tv_sec) * 1000.0 + (end_time.tv_usec - start_time.tv_usec) / 1000.0;
+    printf("Total number of threads: %d\n", number_of_thread);
+    printf("Total data: %d\n", data_size);
     printf("Total sum: %lld\n", total_sum);
     printf("Elapsed time: %lf ms\n", elapsed_time);
     pthread_exit(NULL);
 }
 
-void compute() {
+void extra_load() {
     long long total_sum = 0;
-    for (long long i = 0; i < 300000LL; i++) {
+    for (long long i = 0; i < 5000LL; i++) {
         total_sum += i;
     }
 }
+
 void * arraySum(void * arg) {
     thread_data_t *thread_data = (thread_data_t *)arg;
     long long int threadSum = 0;
     for(int i = thread_data->startInd; i < thread_data->endInd; i++) {
         threadSum += thread_data->data[i];
-        // added a cpu intensive function
-        compute();
+        extra_load(); // calling a cpu intensive function
     }
     pthread_mutex_lock(thread_data->lock);
     *(thread_data->totalSum) += threadSum; //critical section
     pthread_mutex_unlock(thread_data->lock);
     pthread_exit(NULL);
 }
+
+void * arraySumEXTRA(void * arg) {
+    thread_data_t *thread_data = (thread_data_t *)arg;
+    for(int i = thread_data->startInd; i < thread_data->endInd; i++) {
+        pthread_mutex_lock(thread_data->lock);
+        //critical section
+        *(thread_data->totalSum) += thread_data->data[i];
+        // extra_load(); // calling a cpu intensive function
+        pthread_mutex_unlock(thread_data->lock);
+        
+    }
+    pthread_exit(NULL);
+}
+
 int readFile(char filename[], int data[]) {
     FILE *datafile;
     datafile = fopen(filename, "r");
