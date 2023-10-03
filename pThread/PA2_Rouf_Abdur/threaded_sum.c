@@ -9,7 +9,7 @@
 #include <sys/stat.h> 
 #include <sys/time.h>
 #include <pthread.h> // for thread
-#include <math.h> // used atan() from this header for giving some trouble to cpu
+
 typedef struct _thread_data_t { 
     const int *data; 
     int startInd; 
@@ -98,7 +98,6 @@ int main(int argc, char* argv[]) {
     // printf("End time: %ld\n", end_time.tv_usec);
     double elapsed_time = (end_time.tv_sec - start_time.tv_sec) * 1000.0 + (end_time.tv_usec - start_time.tv_usec) / 1000.0;
     printf("Total number of threads: %d\n", number_of_thread);
-    printf("Total data: %d\n", data_size);
     printf("Total sum: %lld\n", total_sum);
     printf("Elapsed time: %lf ms\n", elapsed_time);
     pthread_exit(NULL);

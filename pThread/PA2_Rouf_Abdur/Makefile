@@ -3,7 +3,7 @@
 # Compiler and compiler flags
 CC = gcc
 CFLAGS = -Wall -g
-LINKER = -lpthread
+LINKER = -pthread
 
 # Source file and executable name
 SOURCE = threaded_sum.c
