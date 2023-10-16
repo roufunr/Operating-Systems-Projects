@@ -9,8 +9,10 @@
 #include <sys/stat.h> 
 #include <pthread.h>   // for pthreads 
 #include <time.h>  // for clock_gettime
+#include "progress.h"
 
 int isNumeric(const char*);
+void * arraySum(void *);
 
 typedef struct _thread_data_t { 
     int localTid; 
@@ -27,11 +29,70 @@ int main( int argc, char* argv[]) {
     }
 
     if(isNumeric(argv[1]) == 0) { // implies non numeric argument at second position (index position 1)
-        printf("Inappropriate element in the position of thread count\n");
+        printf("Inappropriate element type in the position of thread count\n");
         return -1;
     }
 
-    printf("Welcome\n");
+    int number_of_threads = atoi(argv[1]);
+    int capacity = 2 * 1000 * 1000; // assuming this is the highest size of the dynamic array
+    
+    
+    // read all data from file and set to dynamic array
+    int * data = (int *)malloc(capacity * sizeof(int));
+    printf("data[1000]-> %d\n", data[1000]);
+    // long long int totalSum = 0;
+    // pthread_mutex_t mutex_lock;
+    // if (pthread_mutex_init(&mutex_lock, NULL) != 0) {
+    //     perror("Mutex initialization failed");
+    //     return -1;
+    // }
+    
+    // thread_data_t thread_data[number_of_threads];
+    // for(int i = 0; i < number_of_threads; i++) {
+    //     thread_data[i].localTid = i;
+    //     thread_data[i].data = data;
+    //     thread_data[i].numVals = capacity;
+    //     thread_data[i].totalSum = &totalSum;
+    //     thread_data[i].lock = &mutex_lock;
+    // }
+    
+    // pthread_t threads[number_of_threads];
+    // for(int i = 0; i < number_of_threads; i++) {
+    //     pthread_create(&threads[i], NULL, arraySum, &thread_data[i]);
+    // }
+
+    // // join all thread with main thread
+    // for(int i = 0; i < number_of_threads; i++) {
+    //     pthread_join(threads[i], NULL);
+    // }
+
+    // pthread_mutex_destroy(&mutex_lock);
+    // free(data);
+    // return 0;
+}
+
+void * arraySum(void * arg) {
+    thread_data_t *thread_data = (thread_data_t *)arg;
+    long long int maximum_latency = 0;
+    while(1) {
+         struct timespec start, end;
+
+        clock_gettime(CLOCK_REALTIME, &start);
+        long long int threadSum = 0;
+        for(int i = 0; i < thread_data->numVals; i++) {
+            threadSum += thread_data->data[i];
+        }
+        pthread_mutex_lock(thread_data->lock);
+        *(thread_data->totalSum) += threadSum; //critical section
+        pthread_mutex_unlock(thread_data->lock);
+
+        clock_gettime(CLOCK_REALTIME, &end);
+        long long int latency = (end.tv_sec - start.tv_sec) * 1000000000 + (end.tv_nsec - start.tv_nsec);
+
+        maximum_latency = latency > maximum_latency ? latency : maximum_latency;
+        print_progress(thread_data->localTid, maximum_latency);
+    }
+    pthread_exit(NULL);
 }
 
 int isNumeric(const char *str) {

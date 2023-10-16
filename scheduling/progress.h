@@ -65,20 +65,20 @@ void print_progress(pid_t localTid, size_t value) {
 	free(buffer);
 }
 
-int main(int argc, char *argv[]){
+// int main(int argc, char *argv[]){
     
-    TERM_CLEAR();
+//     TERM_CLEAR();
 
-    print_progress(0, 100000);
-    print_progress(1, 200000);
-    print_progress(2, 300000);
-    print_progress(3, 400000);
-    print_progress(4, 400000);
-    print_progress(5, 300000);
-    print_progress(6, 200000);
-    print_progress(7, 100000);
+//     print_progress(0, 100000);
+//     print_progress(1, 200000);
+//     print_progress(2, 300000);
+//     print_progress(3, 400000);
+//     print_progress(4, 400000);
+//     print_progress(5, 300000);
+//     print_progress(6, 200000);
+//     print_progress(7, 100000);
     
-    return 0;
-}
+//     return 0;
+// }
 
 
