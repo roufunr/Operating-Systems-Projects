@@ -1,0 +1,25 @@
+nproc --all
+
+sudo apt-get install cpuset
+
+sudo cset set -l
+
+sudo cset set -c 0-2 system
+sudo cset set -c 3 dedicated
+
+
+sudo cset proc -m -f root -t system
+sudo cset proc -k -f root -t system
+
+sudo cset proc -m -p <pid> -t dedicated
+
+sudo cset set -d dedicated
+sudo cset set -d system
+
+
+
+chrt -m 
+
+sudo chrt -p -r <prio> <pid>
+sudo chrt -p -f <prio> <pid>
+sudo chrt -p -o 0 <pid>

@@ -40,35 +40,35 @@ int main( int argc, char* argv[]) {
     // read all data from file and set to dynamic array
     int * data = (int *)malloc(capacity * sizeof(int));
     printf("data[1000]-> %d\n", data[1000]);
-    // long long int totalSum = 0;
-    // pthread_mutex_t mutex_lock;
-    // if (pthread_mutex_init(&mutex_lock, NULL) != 0) {
-    //     perror("Mutex initialization failed");
-    //     return -1;
-    // }
+    long long int totalSum = 0;
+    pthread_mutex_t mutex_lock;
+    if (pthread_mutex_init(&mutex_lock, NULL) != 0) {
+        perror("Mutex initialization failed");
+        return -1;
+    }
     
-    // thread_data_t thread_data[number_of_threads];
-    // for(int i = 0; i < number_of_threads; i++) {
-    //     thread_data[i].localTid = i;
-    //     thread_data[i].data = data;
-    //     thread_data[i].numVals = capacity;
-    //     thread_data[i].totalSum = &totalSum;
-    //     thread_data[i].lock = &mutex_lock;
-    // }
+    thread_data_t thread_data[number_of_threads];
+    for(int i = 0; i < number_of_threads; i++) {
+        thread_data[i].localTid = i;
+        thread_data[i].data = data;
+        thread_data[i].numVals = capacity;
+        thread_data[i].totalSum = &totalSum;
+        thread_data[i].lock = &mutex_lock;
+    }
     
-    // pthread_t threads[number_of_threads];
-    // for(int i = 0; i < number_of_threads; i++) {
-    //     pthread_create(&threads[i], NULL, arraySum, &thread_data[i]);
-    // }
+    pthread_t threads[number_of_threads];
+    for(int i = 0; i < number_of_threads; i++) {
+        pthread_create(&threads[i], NULL, arraySum, &thread_data[i]);
+    }
 
-    // // join all thread with main thread
-    // for(int i = 0; i < number_of_threads; i++) {
-    //     pthread_join(threads[i], NULL);
-    // }
+    // join all thread with main thread
+    for(int i = 0; i < number_of_threads; i++) {
+        pthread_join(threads[i], NULL);
+    }
 
-    // pthread_mutex_destroy(&mutex_lock);
-    // free(data);
-    // return 0;
+    pthread_mutex_destroy(&mutex_lock);
+    free(data);
+    return 0;
 }
 
 void * arraySum(void * arg) {
