@@ -13,13 +13,19 @@ sudo cset proc -k -f root -t system
 
 sudo cset proc -m -p <pid> -t dedicated
 
+3344948
+
 sudo cset set -d dedicated
 sudo cset set -d system
-
-
 
 chrt -m 
 
 sudo chrt -p -r <prio> <pid>
+sudo chrt -p -r 0 3692
+
 sudo chrt -p -f <prio> <pid>
-sudo chrt -p -o 0 <pid>
+sudo chrt -p -f 0 3692
+
+sudo chrt -p -o 0 3692
+
+watch -n.5 grep ctxt /proc/<pid>/status

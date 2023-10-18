@@ -39,7 +39,13 @@ int main( int argc, char* argv[]) {
     
     // read all data from file and set to dynamic array
     int * data = (int *)malloc(capacity * sizeof(int));
-    printf("data[1000]-> %d\n", data[1000]);
+    
+    // assign random values to dynamic array
+    srand(time(NULL));
+    for(int i = 0; i < capacity; i++) {
+        int random_number = rand();
+        data[i] = random_number;
+    }
     long long int totalSum = 0;
     pthread_mutex_t mutex_lock;
     if (pthread_mutex_init(&mutex_lock, NULL) != 0) {
