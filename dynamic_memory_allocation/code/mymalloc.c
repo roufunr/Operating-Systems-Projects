@@ -38,10 +38,12 @@ mblock_t * growHeapBySize(size_t);
 
 int main(int argc, char* argv[]) {
     init_list();
+    
+    void * p4 = mymalloc(500);
     void * p1 = mymalloc(10); 
     void * p2 = mymalloc(100); 
     void * p3 = mymalloc(200); 
-    void * p4 = mymalloc(500);
+    void * p5 = mymalloc(54); 
     print_mlist();
 }
 
