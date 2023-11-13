@@ -27,6 +27,7 @@ mlist_t mlist;
 void * mymalloc(size_t);
 void myfree(void*);
 void init_list();
+void print_mlist();
 mblock_t * findLastMemlistBlock();
 mblock_t * findFreeBlockOfSize(size_t);
 void splitBlockAtSize(mblock_t*, size_t);
@@ -34,99 +35,112 @@ void coallesceBlockPrev(mblock_t*);
 void coallesceBlockNext(mblock_t*);
 mblock_t * growHeapBySize(size_t);
 
+
 int main(int argc, char* argv[]) {
     init_list();
+    void * p1 = mymalloc(10); 
+    void * p2 = mymalloc(100); 
+    print_mlist();
+    void * p3 = mymalloc(200); 
+    // void * p4 = mymalloc(500);
+    print_mlist();
+    // void* break1 = sbrk(0);
     
+    // void* break2 = sbrk(256);
 }
 
 void init_list() {
     mlist.head = NULL;
 }
 
-mblock_t* add_block(mlist_t* list, size_t size, int status, void* payload) {
-    mblock_t* new_block = (mblock_t*)malloc(sizeof(mblock_t));
-    if (new_block == NULL) {
-        // Handle memory allocation failure
-        return NULL;
-    }
-
-    new_block->size = size;
-    new_block->status = status;
-    new_block->payload = payload;
-
-    // Insert at the front of the list
-    new_block->next = list->head;
-    new_block->prev = NULL;
-
-    if (list->head != NULL) {
-        list->head->prev = new_block;
-    }
-
-    list->head = new_block;
-
-    return new_block;
-}
-
-void remove_block(mlist_t* list, mblock_t* block) {
-    if (block->prev != NULL) {
-        block->prev->next = block->next;
-    } else {
-        list->head = block->next;
-    }
-
-    if (block->next != NULL) {
-        block->next->prev = block->prev;
-    }
-
-    free(block);
-}
-
-void print_list(mlist_t* list) {
-    mblock_t* current = list->head;
-
+void print_mlist() {
+    printf("=================================================================\n");
+    mblock_t* current = mlist.head;
     while (current != NULL) {
-        printf("Size: %zu, Status: %d, Payload: %p\n", current->size, current->status, current->payload);
+        printf("mblock_address: %p, Size: %zu, Status: %d, Payload: %p\n",current, current->size, current->status, current->payload);
         current = current->next;
     }
 }
 
-void clear_list(mlist_t* list) {
-    mblock_t* current = list->head;
-    mblock_t* next;
-
-    while (current != NULL) {
-        next = current->next;
-        free(current);
-        current = next;
-    }
-
-    list->head = NULL;
-}
-
 mblock_t * findLastMemlistBlock() {
-    return NULL;
+    if(mlist.head == NULL) {
+        return NULL;
+    }
+    mblock_t* current = mlist.head;
+    while(current->next != NULL) {
+        current = current->next;
+    }
+    return current;
 }
 
 mblock_t * findFreeBlockOfSize(size_t size) {
+    if(mlist.head == NULL) {
+        return NULL;
+    } 
+    mblock_t* current = mlist.head;
+    while(current != NULL) {
+        if(current->status == 0 && size <= current->size) {
+            return current;
+        }
+        current = current->next;
+    }
     return NULL;
 }
+
 void splitBlockAtSize(mblock_t * block, size_t newSize) {
-    
+    mblock_t* remianing_block = (mblock_t *)((void *)block + MBLOCK_HEADER_SZ + newSize); // addr of remaining block
+    remianing_block->status = 0;
+    remianing_block->payload = (void*)remianing_block + MBLOCK_HEADER_SZ;
+    remianing_block->size = (MBLOCK_HEADER_SZ + block->size) - (MBLOCK_HEADER_SZ + newSize) - MBLOCK_HEADER_SZ;
+
+    block->size = newSize;
+    remianing_block->next = block->next;
+    remianing_block->prev = block;
+
+    block->next = remianing_block;
+    block->status = 1;
+    block->payload = (void *)block + MBLOCK_HEADER_SZ;
 }
+
 void coallesceBlockPrev(mblock_t * freedBlock) {
 
 }
+
 void coallesceBlockNext(mblock_t * freedBlock) {
 
 }
-mblock_t * growHeapBySize(size_t size) {
-    return NULL;
+
+mblock_t * growHeapBySize(size_t size) { 
+    void* currentBreak = sbrk(size);
+    if (currentBreak == (void *)-1) {
+        perror("sbrk failed!");
+        return NULL;
+    }
+    mblock_t* newMblock = (mblock_t *) currentBreak;
+    printf("# Program break incremented at size %ld\n", size);
+    newMblock->next = NULL;
+    newMblock->prev = NULL;
+    newMblock->size = size - MBLOCK_HEADER_SZ;
+    newMblock->status = 0;
+
+    mblock_t* lastMemBlockAddr = findLastMemlistBlock();
+    if(lastMemBlockAddr == NULL) {
+        mlist.head = newMblock;
+    } else {
+        lastMemBlockAddr->next = newMblock;
+        newMblock->prev = lastMemBlockAddr;
+    }
+    return newMblock;
 }
 
+
 void * mymalloc(size_t size) {
-    void *payload;
-    // put the implementation here
-    return payload;
+    mblock_t* freeBlock = findFreeBlockOfSize(size);
+    if(freeBlock == NULL) {
+        freeBlock = growHeapBySize(256);
+    }
+    splitBlockAtSize(freeBlock, size);
+    return (void*)freeBlock + MBLOCK_HEADER_SZ;
 }
 
 void myfree(void * ptr) {
