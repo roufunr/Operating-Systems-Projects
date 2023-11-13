@@ -110,20 +110,30 @@ void coallesceBlockNext(mblock_t * freedBlock) {
 
 }
 
-mblock_t * growHeapBySize(size_t size) { 
-    void* currentBreak = sbrk(size);
-    if (currentBreak == (void *)-1) {
-        perror("sbrk failed!");
-        return NULL;
+void* getNewBlockInitialAddress(mblock_t* lastMemBlockAddr, size_t size) {
+    void* newBlockInitAddr;
+    if (lastMemBlockAddr == NULL) {
+        newBlockInitAddr = sbrk(size);
+    } else {
+        void* tentativeNewBreakAddr = ((void*) lastMemBlockAddr) + lastMemBlockAddr->size + MBLOCK_HEADER_SZ + size;
+        if (brk(tentativeNewBreakAddr) == 0) {
+            newBlockInitAddr = ((void*) lastMemBlockAddr) + lastMemBlockAddr->size + MBLOCK_HEADER_SZ;
+        } else {
+            perror("brk failed!");
+            return NULL;
+        }
     }
-    mblock_t* newMblock = (mblock_t *) currentBreak;
+    return newBlockInitAddr;
+}
+mblock_t * growHeapBySize(size_t size) { 
+    mblock_t* lastMemBlockAddr = findLastMemlistBlock();
+    void* newBlockInitAddr = getNewBlockInitialAddress(lastMemBlockAddr, size);
+    mblock_t* newMblock = (mblock_t *) newBlockInitAddr;
     printf("# Program break incremented at size %ld\n", size);
     newMblock->next = NULL;
     newMblock->prev = NULL;
     newMblock->size = size - MBLOCK_HEADER_SZ;
     newMblock->status = 0;
-
-    mblock_t* lastMemBlockAddr = findLastMemlistBlock();
     if(lastMemBlockAddr == NULL) {
         mlist.head = newMblock;
     } else {
