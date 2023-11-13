@@ -40,13 +40,9 @@ int main(int argc, char* argv[]) {
     init_list();
     void * p1 = mymalloc(10); 
     void * p2 = mymalloc(100); 
-    print_mlist();
     void * p3 = mymalloc(200); 
-    // void * p4 = mymalloc(500);
+    void * p4 = mymalloc(500);
     print_mlist();
-    // void* break1 = sbrk(0);
-    
-    // void* break2 = sbrk(256);
 }
 
 void init_list() {
@@ -147,7 +143,7 @@ mblock_t * growHeapBySize(size_t size) {
 void * mymalloc(size_t size) {
     mblock_t* freeBlock = findFreeBlockOfSize(size);
     if(freeBlock == NULL) {
-        freeBlock = growHeapBySize(256);
+        freeBlock = growHeapBySize(1024);
     }
     splitBlockAtSize(freeBlock, size);
     return (void*)freeBlock + MBLOCK_HEADER_SZ;
