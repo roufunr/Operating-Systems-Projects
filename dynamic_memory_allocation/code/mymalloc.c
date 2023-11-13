@@ -26,8 +26,8 @@ mlist_t mlist;
 
 void * mymalloc(size_t);
 void myfree(void*);
+void printMemList(const mblock_t*);
 void init_list();
-void print_mlist();
 mblock_t * findLastMemlistBlock();
 mblock_t * findFreeBlockOfSize(size_t);
 void splitBlockAtSize(mblock_t*, size_t);
@@ -36,20 +36,19 @@ void coallesceBlockNext(mblock_t*);
 mblock_t * growHeapBySize(size_t);
 
 
+
 int main(int argc, char* argv[]) {
     init_list();
-    
-    //void * p4 = mymalloc(500);
     void * p1 = mymalloc(10); 
+    // printMemList(mlist.head);
     void * p2 = mymalloc(100); 
-    // print_mlist();
-    void * p3 = mymalloc(200); 
-    print_mlist();
-    
-    void * p4 = mymalloc(20); 
-    print_mlist();
-    void * p5 = mymalloc(54); 
-    print_mlist();
+    // printMemList(mlist.head);
+    void * p3 = mymalloc(200);
+    // printMemList(mlist.head); 
+    void * p4 = mymalloc(20);
+    // printMemList(mlist.head); 
+    void * p5 = mymalloc(54);
+    printMemList(mlist.head); 
     
 }
 
@@ -57,13 +56,20 @@ void init_list() {
     mlist.head = NULL;
 }
 
-void print_mlist() {
-    printf("=================================================================\n");
-    mblock_t* current = mlist.head;
-    while (current != NULL) {
-        printf("mblock_address: %p, Size: %zu, Status: %d, Payload: %p\n",current, current->size, current->status, current->payload);
-        current = current->next;
+void printMemList(const mblock_t* head) {
+    const mblock_t* p = head;
+    size_t i = 0;
+    while(p != NULL) {
+        printf("[%ld] p: %p\n", i, p);
+        printf("[%ld] p->size: %ld\n", i, p->size);
+        printf("[%ld] p->status: %s\n", i, p->status > 0 ? "allocated" : "free");
+        printf("[%ld] p->prev: %p\n", i, p->prev);
+        printf("[%ld] p->next: %p\n", i, p->next);
+        printf("___________________________\n");
+        ++i;
+        p = p->next;
     }
+    printf("===========================\n");
 }
 
 mblock_t * findLastMemlistBlock() {
@@ -114,11 +120,21 @@ void splitBlockAtSize(mblock_t * block, size_t newSize) {
 }
 
 void coallesceBlockPrev(mblock_t * freedBlock) {
-
+    mblock_t* prevBlock = freedBlock->prev;
+    prevBlock->size = prevBlock->size + freedBlock->size + MBLOCK_HEADER_SZ;
+    prevBlock->next = freedBlock->next;
+    if(freedBlock->next != NULL) {
+        freedBlock->next->prev = prevBlock;
+    }
 }
 
 void coallesceBlockNext(mblock_t * freedBlock) {
-
+    mblock_t* nextBlock = freedBlock->next;
+    freedBlock->size = freedBlock->size + nextBlock->size + MBLOCK_HEADER_SZ;
+    freedBlock->next = nextBlock->next;
+    if(nextBlock->next != NULL) {
+        nextBlock->next->prev = freedBlock;
+    }
 }
 
 void* getNewBlockInitialAddress(mblock_t* lastMemBlockAddr, size_t size) {
@@ -140,7 +156,7 @@ mblock_t * growHeapBySize(size_t size) {
     mblock_t* lastMemBlockAddr = findLastMemlistBlock();
     void* newBlockInitAddr = getNewBlockInitialAddress(lastMemBlockAddr, size);
     mblock_t* newMblock = (mblock_t *) newBlockInitAddr;
-    printf("# Program break incremented at size %ld\n", size);
+    // printf("# Program break incremented at size %ld\n", size);
     newMblock->next = NULL;
     newMblock->prev = NULL;
     newMblock->size = size - MBLOCK_HEADER_SZ;
@@ -165,5 +181,15 @@ void * mymalloc(size_t size) {
 }
 
 void myfree(void * ptr) {
-    // return nothing
+    if(ptr == NULL) {
+        printf("Invalid Operation!\n");
+    }
+    mblock_t* memBlock = (mblock_t*) (ptr - MBLOCK_HEADER_SZ);
+    memBlock->status = 0;
+    if(memBlock->next != NULL && memBlock->next->status == 0) {
+        coallesceBlockNext(memBlock);
+    }
+    if(memBlock->prev != NULL && memBlock->prev->status == 0) {
+        coallesceBlockPrev(memBlock);
+    }
 }
