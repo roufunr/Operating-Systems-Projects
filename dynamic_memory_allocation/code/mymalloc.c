@@ -39,12 +39,18 @@ mblock_t * growHeapBySize(size_t);
 int main(int argc, char* argv[]) {
     init_list();
     
-    void * p4 = mymalloc(500);
+    //void * p4 = mymalloc(500);
     void * p1 = mymalloc(10); 
     void * p2 = mymalloc(100); 
+    // print_mlist();
     void * p3 = mymalloc(200); 
+    print_mlist();
+    
+    void * p4 = mymalloc(20); 
+    print_mlist();
     void * p5 = mymalloc(54); 
     print_mlist();
+    
 }
 
 void init_list() {
@@ -86,18 +92,25 @@ mblock_t * findFreeBlockOfSize(size_t size) {
 }
 
 void splitBlockAtSize(mblock_t * block, size_t newSize) {
-    mblock_t* remianing_block = (mblock_t *)((void *)block + MBLOCK_HEADER_SZ + newSize); // addr of remaining block
-    remianing_block->status = 0;
-    remianing_block->payload = (void*)remianing_block + MBLOCK_HEADER_SZ;
-    remianing_block->size = (MBLOCK_HEADER_SZ + block->size) - (MBLOCK_HEADER_SZ + newSize) - MBLOCK_HEADER_SZ;
+    if((block->size - newSize) > MBLOCK_HEADER_SZ) {
+        size_t remaining_block_size = block->size - newSize - MBLOCK_HEADER_SZ;
+        mblock_t* remianing_block = (mblock_t *)((void *)block + MBLOCK_HEADER_SZ + newSize); // addr of remaining block
+        remianing_block->status = 0;
+        remianing_block->payload = (void*)remianing_block + MBLOCK_HEADER_SZ;
+        remianing_block->size = remaining_block_size;
 
-    block->size = newSize;
-    remianing_block->next = block->next;
-    remianing_block->prev = block;
+        block->size = newSize;
+        remianing_block->next = block->next;
+        remianing_block->prev = block;
 
-    block->next = remianing_block;
-    block->status = 1;
-    block->payload = (void *)block + MBLOCK_HEADER_SZ;
+        block->next = remianing_block;
+        block->status = 1;
+        block->payload = (void *)block + MBLOCK_HEADER_SZ;
+    } else {
+        block->status = 1;
+        block->payload = (void *)block + MBLOCK_HEADER_SZ;
+    }
+    
 }
 
 void coallesceBlockPrev(mblock_t * freedBlock) {
@@ -145,7 +158,7 @@ mblock_t * growHeapBySize(size_t size) {
 void * mymalloc(size_t size) {
     mblock_t* freeBlock = findFreeBlockOfSize(size);
     if(freeBlock == NULL) {
-        freeBlock = growHeapBySize(1024);
+        freeBlock = growHeapBySize(256);
     }
     splitBlockAtSize(freeBlock, size);
     return (void*)freeBlock + MBLOCK_HEADER_SZ;
