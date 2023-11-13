@@ -40,24 +40,21 @@ mblock_t * growHeapBySize(size_t);
 int main(int argc, char* argv[]) {
     init_list();
     void * p1 = mymalloc(10); 
-    // printMemList(mlist.head);
     void * p2 = mymalloc(100); 
+    void * p3 = mymalloc(200); 
+    void * p4 = mymalloc(500); 
+    myfree(p3); p3 = NULL; 
+    myfree(p2); p2 = NULL; 
+    void * p5 = mymalloc(150); 
+    void * p6 = mymalloc(500); 
+    printMemList(mlist.head);
+    myfree(p4); p4 = NULL; 
+    myfree(p5); p5 = NULL; 
+    myfree(p6); p6 = NULL; 
+    myfree(p1); p1 = NULL;
+    printMemList(mlist.head);
+
     // printMemList(mlist.head);
-    void * p3 = mymalloc(200);
-    // printMemList(mlist.head); 
-    void * p4 = mymalloc(20);
-    // printMemList(mlist.head); 
-    void * p5 = mymalloc(54);
-    printMemList(mlist.head); 
-
-
-    myfree(p4);
-    printMemList(mlist.head); 
-    p4 = NULL;
-    
-    myfree(p2);
-    printMemList(mlist.head); 
-    
 }
 
 void init_list() {
@@ -165,7 +162,7 @@ mblock_t * growHeapBySize(size_t size) {
     mblock_t* lastMemBlockAddr = findLastMemlistBlock();
     void* newBlockInitAddr = getNewBlockInitialAddress(lastMemBlockAddr, size);
     mblock_t* newMblock = (mblock_t *) newBlockInitAddr;
-    // printf("# Program break incremented at size %ld\n", size);
+    printf("# Program break incremented at size %ld\n", size);
     newMblock->next = NULL;
     newMblock->prev = NULL;
     newMblock->size = size - MBLOCK_HEADER_SZ;
@@ -182,8 +179,10 @@ mblock_t * growHeapBySize(size_t size) {
 
 void * mymalloc(size_t size) {
     mblock_t* freeBlock = findFreeBlockOfSize(size);
+    size_t default_mblock_chunk_size = 1024;
     if(freeBlock == NULL) {
-        freeBlock = growHeapBySize(256);
+        size_t increment_size = default_mblock_chunk_size < (size + MBLOCK_HEADER_SZ) ? size + MBLOCK_HEADER_SZ: default_mblock_chunk_size;
+        freeBlock = growHeapBySize(increment_size);
     }
     splitBlockAtSize(freeBlock, size);
     return (void*)freeBlock + MBLOCK_HEADER_SZ;
