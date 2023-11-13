@@ -49,6 +49,14 @@ int main(int argc, char* argv[]) {
     // printMemList(mlist.head); 
     void * p5 = mymalloc(54);
     printMemList(mlist.head); 
+
+
+    myfree(p4);
+    printMemList(mlist.head); 
+    p4 = NULL;
+    
+    myfree(p2);
+    printMemList(mlist.head); 
     
 }
 
@@ -117,6 +125,7 @@ void splitBlockAtSize(mblock_t * block, size_t newSize) {
         block->payload = (void *)block + MBLOCK_HEADER_SZ;
     }
     
+
 }
 
 void coallesceBlockPrev(mblock_t * freedBlock) {
