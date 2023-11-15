@@ -39,22 +39,41 @@ mblock_t * growHeapBySize(size_t);
 
 int main(int argc, char* argv[]) {
     init_list();
-    void * p1 = mymalloc(10); 
+    void * p1 = mymalloc(10);
+    //printMemList(mlist.head);
+    
     void * p2 = mymalloc(100); 
-    void * p3 = mymalloc(200); 
-    void * p4 = mymalloc(500); 
+    //printMemList(mlist.head);
+
+    void * p3 = mymalloc(200);
+    //printMemList(mlist.head);
+
+    void * p4 = mymalloc(500);
+    //printMemList(mlist.head);
+
     myfree(p3); p3 = NULL; 
-    myfree(p2); p2 = NULL; 
-    void * p5 = mymalloc(150); 
-    void * p6 = mymalloc(500); 
-    printMemList(mlist.head);
-    myfree(p4); p4 = NULL; 
-    myfree(p5); p5 = NULL; 
+    //printMemList(mlist.head);
+
+    myfree(p2); p2 = NULL;
+    //printMemList(mlist.head);
+
+    void * p5 = mymalloc(150);
+    //printMemList(mlist.head);
+
+    void * p6 = mymalloc(500);
+    //printMemList(mlist.head);
+
+    myfree(p4); p4 = NULL;
+    //printMemList(mlist.head);
+
+    myfree(p5); p5 = NULL;
+    //printMemList(mlist.head);
+
     myfree(p6); p6 = NULL; 
+    //printMemList(mlist.head);
+
     myfree(p1); p1 = NULL;
     printMemList(mlist.head);
-
-    // printMemList(mlist.head);
 }
 
 void init_list() {
@@ -113,7 +132,7 @@ void splitBlockAtSize(mblock_t * block, size_t newSize) {
         block->size = newSize;
         remianing_block->next = block->next;
         remianing_block->prev = block;
-
+        if(block->next != NULL) block->next->prev = remianing_block;
         block->next = remianing_block;
         block->status = 1;
         block->payload = (void *)block + MBLOCK_HEADER_SZ;
@@ -132,6 +151,7 @@ void coallesceBlockPrev(mblock_t * freedBlock) {
     if(freedBlock->next != NULL) {
         freedBlock->next->prev = prevBlock;
     }
+    freedBlock = prevBlock;
 }
 
 void coallesceBlockNext(mblock_t * freedBlock) {
@@ -194,10 +214,16 @@ void myfree(void * ptr) {
     }
     mblock_t* memBlock = (mblock_t*) (ptr - MBLOCK_HEADER_SZ);
     memBlock->status = 0;
-    if(memBlock->next != NULL && memBlock->next->status == 0) {
-        coallesceBlockNext(memBlock);
+
+    mblock_t* currentMBlock = memBlock;
+    memBlock->status = 0;
+    while((currentMBlock->next != NULL && currentMBlock->next->status == 0)) {
+        coallesceBlockNext(currentMBlock);
     }
-    if(memBlock->prev != NULL && memBlock->prev->status == 0) {
-        coallesceBlockPrev(memBlock);
+    
+    currentMBlock = memBlock;
+    while(currentMBlock->prev != NULL && currentMBlock->prev->status == 0) {
+        coallesceBlockPrev(currentMBlock);
+        currentMBlock = currentMBlock->prev;
     }
 }
