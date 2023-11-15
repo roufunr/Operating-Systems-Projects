@@ -213,7 +213,6 @@ void myfree(void * ptr) {
     memBlock->status = 0;
 
     mblock_t* currentMBlock = memBlock;
-    memBlock->status = 0;
     while((currentMBlock->next != NULL && currentMBlock->next->status == 0)) {
         coallesceBlockNext(currentMBlock);
     }
