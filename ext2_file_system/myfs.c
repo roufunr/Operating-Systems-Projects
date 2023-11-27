@@ -169,7 +169,7 @@ myfs_t* my_mkfs(int size, int maxfiles) {
 	inodetable[root_inode_number].size = 2 * sizeof(dirent_t);  // will contain 2 direntries ('.' and '..') at initialization
 	inodetable[root_inode_number].blocks = 1;  // will only take up 1 block (for just 2 direntries: '.' and '..') at initialization 
 	for (u_int32_t i=1; i<15; ++i)  // initialize all data blocks to NULL (1 data block only needed at initialization)
-	inodetable[root_inode_number].data[i] = NULL;
+		inodetable[root_inode_number].data[i] = NULL;
 	inodetable[root_inode_number].data[0] = &(groupdescriptor->groupdescriptor_info.block_data[root_datablock_number]);  
 	// write out to fs
 	memcpy((void*)groupdescriptor->groupdescriptor_info.inode_table, inodetable_ptr, BLKSIZE);
