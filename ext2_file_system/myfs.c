@@ -19,54 +19,54 @@ const int invalid_inode_number = 0;  // 0 is "invalid"
 const int root_datablock_number = 0;  // 1 because 0 reserved for badsectors data
 
 typedef struct _block_t {
-  char data[BLKSIZE];
+	char data[BLKSIZE];
 } block_t;
 
 typedef struct _inode_t {
-  //int uid;
-  //int gid;
-  //char rwx;
-  int size;  // of file in bytes
-  int blocks;  // blocks allocated to this file - used or not
-  //struct timeval atime;
-  //struct timeval mtime;  
-  //struct timeval ctime;  // creation time
-  //int links_count;  // hardlinks
-  block_t* data[15];  // 12 direct, 1 single-indirect, 1 double-indirect, 1 triple-indirect
+	//int uid;
+	//int gid;
+	//char rwx;
+	int size;  // of file in bytes
+	int blocks;  // blocks allocated to this file - used or not
+	//struct timeval atime;
+	//struct timeval mtime;  
+	//struct timeval ctime;  // creation time
+	//int links_count;  // hardlinks
+	block_t* data[15];  // 12 direct, 1 single-indirect, 1 double-indirect, 1 triple-indirect
 } inode_t;
 
 typedef struct _dirent_t {
-  int inode;  // entry's inode number
-  char file_type;  // entry's file type (0: unknown, 1: file, 2: directory)
-  int name_len;  // entry's name length ('\0'-excluded)
-  char name[255];  // entry's name ('\0'-terminated)
+	int inode;  // entry's inode number
+	char file_type;  // entry's file type (0: unknown, 1: file, 2: directory)
+	int name_len;  // entry's name length ('\0'-excluded)
+	char name[255];  // entry's name ('\0'-terminated)
 } dirent_t;
 
 typedef struct _superblock_info_t {
-  int blocks;  // total number of filesystem data blocks
-  char name[255];  // name identifier of filesystem
+	int blocks;  // total number of filesystem data blocks
+	char name[255];  // name identifier of filesystem
 } superblock_info_t;
 
 union superblock_t {
-  block_t block;  // ensures superblock_t size matches block_t size (1 block)
-  superblock_info_t superblock_info;  // to access the superblock info
+	block_t block;  // ensures superblock_t size matches block_t size (1 block)
+	superblock_info_t superblock_info;  // to access the superblock info
 };
 
 typedef struct _groupdescriptor_info_t {
-  inode_t* inode_table;  // location of inode_table (first inode_t in region)  
-  block_t* block_data;  // location of block_data (first block_t in region)
+	inode_t* inode_table;  // location of inode_table (first inode_t in region)  
+	block_t* block_data;  // location of block_data (first block_t in region)
 } groupdescriptor_info_t;
 
 union groupdescriptor_t {
-  block_t block;  // ensures groupdescriptor_t size matches block_t size (1 block)
-  groupdescriptor_info_t groupdescriptor_info;  // to access the groupdescriptor info
+	block_t block;  // ensures groupdescriptor_t size matches block_t size (1 block)
+	groupdescriptor_info_t groupdescriptor_info;  // to access the groupdescriptor info
 };
 
 typedef struct _myfs_t {
-  union superblock_t super;  // superblock
-  union groupdescriptor_t groupdescriptor;  // groupdescriptor
-  block_t bmap;  // (free/used) block bitmap
-  block_t imap;  // (free/used) inode bitmap
+	union superblock_t super;  // superblock
+	union groupdescriptor_t groupdescriptor;  // groupdescriptor
+	block_t bmap;  // (free/used) block bitmap
+	block_t imap;  // (free/used) inode bitmap
 } myfs_t;
 
 myfs_t* my_mkfs(int size, int maxfiles);
