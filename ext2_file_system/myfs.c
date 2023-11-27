@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
 
 	inode_t* cur_dir_inode = NULL;
 
-	myfs_t* myfs = my_mkfs(100*BLKSIZE, 10);
+	myfs_t* myfs = my_mkfs(100 * BLKSIZE, 10);
 
 	// create 2 dirs inside [/] (root dir)
 	int cur_dir_inode_number = 2;  // root inode
