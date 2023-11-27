@@ -30,7 +30,7 @@ typedef struct _inode_t {
   int blocks;  // blocks allocated to this file - used or not
   //struct timeval atime;
   //struct timeval mtime;  
-  struct timeval ctime;  // creation time
+  //struct timeval ctime;  // creation time
   //int links_count;  // hardlinks
   block_t* data[15];  // 12 direct, 1 single-indirect, 1 double-indirect, 1 triple-indirect
 } inode_t;
@@ -80,36 +80,36 @@ int roundup(int x, int y) {
 }
 
 
-int main(int argc, char *argv[]){
-    
-  inode_t* cur_dir_inode = NULL;
+int main(int argc, char *argv[]) {
 
-  myfs_t* myfs = my_mkfs(100*BLKSIZE, 10);
+	inode_t* cur_dir_inode = NULL;
 
-  // create 2 dirs inside [/] (root dir)
-  int cur_dir_inode_number = 2;  // root inode
-  my_creatdir(myfs, cur_dir_inode_number, "mystuff");  // will be inode 3
-  my_creatdir(myfs, cur_dir_inode_number, "homework");  // will be inode 4
-  
-  // create 1 dir inside [/homework] dir
-  cur_dir_inode_number = 4;  
-  my_creatdir(myfs, cur_dir_inode_number, "assignment5");  // will be inode 5
+	myfs_t* myfs = my_mkfs(100*BLKSIZE, 10);
 
-  // create 1 dir inside [/homework/assignment5] dir
-  cur_dir_inode_number = 5; 
-  my_creatdir(myfs, cur_dir_inode_number, "mycode");  // will be inode 6
+	// create 2 dirs inside [/] (root dir)
+	int cur_dir_inode_number = 2;  // root inode
+	my_creatdir(myfs, cur_dir_inode_number, "mystuff");  // will be inode 3
+	my_creatdir(myfs, cur_dir_inode_number, "homework");  // will be inode 4
 
-  // create 1 dir inside [/homework/mystuff] dir
-  cur_dir_inode_number = 3;  
-  my_creatdir(myfs, cur_dir_inode_number, "mydata");  // will be inode 7
+	// create 1 dir inside [/homework] dir
+	cur_dir_inode_number = 4;  
+	my_creatdir(myfs, cur_dir_inode_number, "assignment5");  // will be inode 5
 
-  printf("\nDumping filesystem structure:\n");
-  my_dumpfs(myfs);
+	// create 1 dir inside [/homework/assignment5] dir
+	cur_dir_inode_number = 5; 
+	my_creatdir(myfs, cur_dir_inode_number, "mycode");  // will be inode 6
 
-  printf("\nCrawling filesystem structure:\n");
-  my_crawlfs(myfs);
+	// create 1 dir inside [/homework/mystuff] dir
+	cur_dir_inode_number = 3;  
+	my_creatdir(myfs, cur_dir_inode_number, "mydata");  // will be inode 7
 
-  return 0;
+	printf("\nDumping filesystem structure:\n");
+	my_dumpfs(myfs);
+
+	printf("\nCrawling filesystem structure:\n");
+	my_crawlfs(myfs);
+
+	return 0;
 }
 
 
@@ -245,6 +245,7 @@ void my_dumpfs(myfs_t* myfs) {
 
 #define LEVEL_TAB for(int o=0; o<4*level; ++o){ printf(" "); }
 #define NEXTLEVEL_TAB for(int o=0; o<4*(level+1); ++o){ printf(" "); }
+
 void dump_dirinode(myfs_t* myfs, int inode_number, int level) {
   inode_t* inodetable = myfs->groupdescriptor.groupdescriptor_info.inode_table;
   LEVEL_TAB printf("  inode.size: %d\n", inodetable[inode_number].size);
@@ -276,6 +277,7 @@ void dump_dirinode(myfs_t* myfs, int inode_number, int level) {
 }
 
 #define LEVEL_TREE for(int o=0; o<2*level; ++o){ printf(" "); } printf("|"); for(int o=0; o<2*level; ++o){ printf("_"); }
+
 void crawl_dirinode(myfs_t* myfs, int inode_number, int level) {
   inode_t* inodetable = myfs->groupdescriptor.groupdescriptor_info.inode_table;
   for (uint block_nr = 0; block_nr < 11; ++block_nr) {  // 12 first blocks are direct (only deal with direct blocks for simplicity)
