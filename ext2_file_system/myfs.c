@@ -81,39 +81,40 @@ int roundup(int x, int y) {
 
 
 int main(int argc, char *argv[]) {
-
 	inode_t* cur_dir_inode = NULL;
 
-	myfs_t* myfs = my_mkfs(100 * BLKSIZE, 10);
+	myfs_t* myfs = my_mkfs(100 * BLKSIZE, 10); 
 
 	// create 2 dirs inside [/] (root dir)
 	int cur_dir_inode_number = 2;  // root inode
 	my_creatdir(myfs, cur_dir_inode_number, "mystuff");  // will be inode 3
-	my_creatdir(myfs, cur_dir_inode_number, "homework");  // will be inode 4
+	// my_creatdir(myfs, cur_dir_inode_number, "homework");  // will be inode 4
 
-	// create 1 dir inside [/homework] dir
-	cur_dir_inode_number = 4;  
-	my_creatdir(myfs, cur_dir_inode_number, "assignment5");  // will be inode 5
+	// // create 1 dir inside [/homework] dir
+	// cur_dir_inode_number = 4;  
+	// my_creatdir(myfs, cur_dir_inode_number, "assignment5");  // will be inode 5
 
-	// create 1 dir inside [/homework/assignment5] dir
-	cur_dir_inode_number = 5; 
-	my_creatdir(myfs, cur_dir_inode_number, "mycode");  // will be inode 6
+	// // create 1 dir inside [/homework/assignment5] dir
+	// cur_dir_inode_number = 5; 
+	// my_creatdir(myfs, cur_dir_inode_number, "mycode");  // will be inode 6
 
-	// create 1 dir inside [/homework/mystuff] dir
-	cur_dir_inode_number = 3;  
-	my_creatdir(myfs, cur_dir_inode_number, "mydata");  // will be inode 7
+	// // create 1 dir inside [/homework/mystuff] dir
+	// cur_dir_inode_number = 3;  
+	// my_creatdir(myfs, cur_dir_inode_number, "mydata");  // will be inode 7
 
-	printf("\nDumping filesystem structure:\n");
-	my_dumpfs(myfs);
+	// printf("\nDumping filesystem structure:\n");
+	// my_dumpfs(myfs);
 
-	printf("\nCrawling filesystem structure:\n");
-	my_crawlfs(myfs);
+	// printf("\nCrawling filesystem structure:\n");
+	// my_crawlfs(myfs);
+
+	// printf("Hello, world!");
 
 	return 0;
 }
 
 
-myfs_t* my_mkfs(int size, int maxfiles) {
+myfs_t* my_mkfs(int size, int maxfiles) { // size in bytes //
 	int num_data_blocks = roundup(size, BLKSIZE);
 
 	int num_inode_table_blocks = roundup(maxfiles*sizeof(inode_t), BLKSIZE);  // Note: not quite, inode should not be split between blocks
@@ -310,8 +311,55 @@ void my_crawlfs(myfs_t* myfs) {
 }
 
 // IMPLEMENT THIS FUNCTION
+
+void printBinary(const char* charArray) {
+    // Iterate through each character in the array
+    for (int i = 0; charArray[i] != '\0'; ++i) {
+        // Convert the character to its ASCII value and print it in binary
+        printf("%c in binary: ", charArray[i]);
+        for (int j = 7; j >= 0; --j) {
+            printf("%d", (charArray[i] >> j) & 1);
+        }
+        printf("\n");
+    }
+}
+
+block_t* read_imap(myfs_t* myfs) {
+	void* imap_ptr = malloc(BLKSIZE);
+	memcpy(imap_ptr, (void*)&myfs->imap, BLKSIZE);
+	block_t* imap = (block_t *) imap_ptr;
+	return imap;
+}
+
+int modify_map(block_t* map) {
+	for(int i = 0; map->data[i] != '\0'; i++) {
+		char byteMap = map->data[i];
+		int j = 0;
+		while (j < 8) {
+            if (((byteMap >> j) & 1) != 1) {
+				map->data[i] = (byteMap | (1 << j));
+				return (i * 8 + j);
+			}
+			j++;
+        }
+	}
+	return -1; // no space to add new dir/file to this filesystem
+}
+
+void write_imap(myfs_t* myfs, block_t* imap) {
+	memcpy((void*)&myfs->imap, (void*)imap, BLKSIZE);
+}
+
+
 void my_creatdir(myfs_t* myfs, int cur_dir_inode_number, const char* new_dirname) {
-  
+	printBinary(myfs->imap.data);
+	block_t* imap = read_imap(myfs);
+	int new_imap_idx = modify_map(imap);
+	write_imap(myfs, imap);
+	printBinary(myfs->imap.data);
+
+	printf("New imap number %d\n", new_imap_idx);
+
 }
 
 
