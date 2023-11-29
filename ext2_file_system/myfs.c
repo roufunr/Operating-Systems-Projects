@@ -357,9 +357,7 @@ void my_creatdir(myfs_t* myfs, int cur_dir_inode_number, const char* new_dirname
 	int new_imap_idx = modify_map(imap);
 	write_imap(myfs, imap);
 	printBinary(myfs->imap.data);
-
 	printf("New imap number %d\n", new_imap_idx);
-
 }
 
 
