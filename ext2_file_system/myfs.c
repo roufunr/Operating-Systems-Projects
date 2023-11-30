@@ -74,6 +74,7 @@ void my_dumpfs(myfs_t* myfs);
 void dump_dirinode(myfs_t* myfs, int inode_number, int level);
 void my_crawlfs(myfs_t* myfs);
 void my_creatdir(myfs_t* myfs, int cur_dir_inode_number, const char* new_dirname);
+void printBinary(const char*);
 
 int roundup(int x, int y) {
   return x == 0 ? 0 : 1 + ((x - 1) / y);
@@ -102,12 +103,14 @@ int main(int argc, char *argv[]) {
 	cur_dir_inode_number = 3;  
 	my_creatdir(myfs, cur_dir_inode_number, "mydata");  // will be inode 7
 
+	// cur_dir_inode_number = 7;  
+	// my_creatdir(myfs, cur_dir_inode_number, "rrrr");  // will be inode 8
+
 	// printf("\nDumping filesystem structure:\n");
 	// my_dumpfs(myfs);
 
 	printf("\nCrawling filesystem structure:\n");
 	my_crawlfs(myfs);
-
 	return 0;
 }
 
@@ -374,16 +377,13 @@ void my_creatdir(myfs_t* myfs, int cur_dir_inode_number, const char* new_dirname
 
 	//step 3.1
 	inode_t* parent_inode_addr_in_fs = &myfs->groupdescriptor.groupdescriptor_info.inode_table[cur_dir_inode_number];
-	printf("before parent directory entry size: %d\n", parent_inode_addr_in_fs->size);
 	void* parent_inode_ptr = malloc(BLKSIZE);
 	memcpy(parent_inode_ptr, (void*)parent_inode_addr_in_fs, BLKSIZE);
 	inode_t* parent_node = (inode_t *) parent_inode_ptr;
 	parent_node->size = parent_node->size + sizeof(dirent_t);
 	memcpy((void*)parent_inode_addr_in_fs, (void*)parent_node, BLKSIZE);
-	printf("after parent directory entry size: %d\n", parent_inode_addr_in_fs->size);
-
+	
 	// step 3.2
-	printf("before new directory entry size: %d\n", myfs->groupdescriptor.groupdescriptor_info.inode_table[new_imap_idx].size);
 	void *inodetable_ptr = malloc(BLKSIZE);
 	// read-in 
 	memcpy(inodetable_ptr, (void*)&myfs->groupdescriptor.groupdescriptor_info.inode_table[new_imap_idx], BLKSIZE);
@@ -396,7 +396,6 @@ void my_creatdir(myfs_t* myfs, int cur_dir_inode_number, const char* new_dirname
 	inodetable->data[0] = &(myfs->groupdescriptor.groupdescriptor_info.block_data[new_bmap_idx]);  
 	// write out to fs
 	memcpy((void*)&myfs->groupdescriptor.groupdescriptor_info.inode_table[new_imap_idx], (void*)inodetable, BLKSIZE);
-	printf("after new directory entry size: %d\n", myfs->groupdescriptor.groupdescriptor_info.inode_table[new_imap_idx].size);
 
 	// step 4
 	// data (dir)
@@ -409,7 +408,7 @@ void my_creatdir(myfs_t* myfs, int cur_dir_inode_number, const char* new_dirname
 	dirent_t* new_dir = &dir[new_dir_idx_in_parent_directory];
 	{
 		new_dir->name_len = strlen(new_dirname);
-		new_dir->inode = new_dir_idx_in_parent_directory + 1;
+		new_dir->inode = new_imap_idx;
 		new_dir->file_type = 2;
 		strcpy(new_dir->name, new_dirname);
 	}
