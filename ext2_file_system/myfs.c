@@ -75,11 +75,16 @@ void dump_dirinode(myfs_t* myfs, int inode_number, int level);
 void my_crawlfs(myfs_t* myfs);
 void my_creatdir(myfs_t* myfs, int cur_dir_inode_number, const char* new_dirname);
 void printBinary(const char*);
+int modify_map(block_t*);
+block_t* read_imap(myfs_t*);
+void write_imap(myfs_t*, block_t*);
+block_t* read_bmap(myfs_t*);
+void write_bmap(myfs_t*, block_t*);
+void my_creatdir(myfs_t*, int, const char*);
 
 int roundup(int x, int y) {
   return x == 0 ? 0 : 1 + ((x - 1) / y);
 }
-
 
 int main(int argc, char *argv[]) {
 	inode_t* cur_dir_inode = NULL;
@@ -113,7 +118,6 @@ int main(int argc, char *argv[]) {
 	my_crawlfs(myfs);
 	return 0;
 }
-
 
 myfs_t* my_mkfs(int size, int maxfiles) { // size in bytes //
 	int num_data_blocks = roundup(size, BLKSIZE);
