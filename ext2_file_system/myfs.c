@@ -105,8 +105,8 @@ int main(int argc, char *argv[]) {
 	// printf("\nDumping filesystem structure:\n");
 	// my_dumpfs(myfs);
 
-	// printf("\nCrawling filesystem structure:\n");
-	// my_crawlfs(myfs);
+	printf("\nCrawling filesystem structure:\n");
+	my_crawlfs(myfs);
 
 	return 0;
 }
@@ -322,8 +322,6 @@ void printBinary(const char* charArray) {
     }
 }
 
-
-
 int modify_map(block_t* map) {
 	for(int i = 0; map->data[i] != '\0'; i++) {
 		char byteMap = map->data[i];
@@ -360,7 +358,6 @@ block_t* read_bmap(myfs_t* myfs) {
 void write_bmap(myfs_t* myfs, block_t* bmap) {
 	memcpy((void*)&myfs->bmap, (void*)bmap, BLKSIZE);
 }
-
 
 void my_creatdir(myfs_t* myfs, int cur_dir_inode_number, const char* new_dirname) {
 	// step 1
