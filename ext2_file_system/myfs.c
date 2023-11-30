@@ -88,27 +88,25 @@ int main(int argc, char *argv[]) {
 	// create 2 dirs inside [/] (root dir)
 	int cur_dir_inode_number = 2;  // root inode
 	my_creatdir(myfs, cur_dir_inode_number, "mystuff");  // will be inode 3
-	// my_creatdir(myfs, cur_dir_inode_number, "homework");  // will be inode 4
+	my_creatdir(myfs, cur_dir_inode_number, "homework");  // will be inode 4
 
-	// // create 1 dir inside [/homework] dir
-	// cur_dir_inode_number = 4;  
-	// my_creatdir(myfs, cur_dir_inode_number, "assignment5");  // will be inode 5
+	// create 1 dir inside [/homework] dir
+	cur_dir_inode_number = 4;  
+	my_creatdir(myfs, cur_dir_inode_number, "assignment5");  // will be inode 5
 
-	// // create 1 dir inside [/homework/assignment5] dir
-	// cur_dir_inode_number = 5; 
-	// my_creatdir(myfs, cur_dir_inode_number, "mycode");  // will be inode 6
+	// create 1 dir inside [/homework/assignment5] dir
+	cur_dir_inode_number = 5; 
+	my_creatdir(myfs, cur_dir_inode_number, "mycode");  // will be inode 6
 
-	// // create 1 dir inside [/homework/mystuff] dir
-	// cur_dir_inode_number = 3;  
-	// my_creatdir(myfs, cur_dir_inode_number, "mydata");  // will be inode 7
+	// create 1 dir inside [/homework/mystuff] dir
+	cur_dir_inode_number = 3;  
+	my_creatdir(myfs, cur_dir_inode_number, "mydata");  // will be inode 7
 
 	// printf("\nDumping filesystem structure:\n");
 	// my_dumpfs(myfs);
 
 	// printf("\nCrawling filesystem structure:\n");
 	// my_crawlfs(myfs);
-
-	// printf("Hello, world!");
 
 	return 0;
 }
@@ -363,20 +361,90 @@ void write_bmap(myfs_t* myfs, block_t* bmap) {
 	memcpy((void*)&myfs->bmap, (void*)bmap, BLKSIZE);
 }
 
+
 void my_creatdir(myfs_t* myfs, int cur_dir_inode_number, const char* new_dirname) {
 	// step 1
 	block_t* imap = read_imap(myfs);
 	int new_imap_idx = modify_map(imap);
 	write_imap(myfs, imap);
 
+
 	// step 2
 	block_t* bmap = read_bmap(myfs);
 	int new_bmap_idx = modify_map(bmap);
 	write_bmap(myfs, bmap);
 
-	//step 3
-	
-	
+
+	//step 3.1
+	inode_t* parent_inode_addr_in_fs = &myfs->groupdescriptor.groupdescriptor_info.inode_table[cur_dir_inode_number];
+	printf("before parent directory entry size: %d\n", parent_inode_addr_in_fs->size);
+	void* parent_inode_ptr = malloc(BLKSIZE);
+	memcpy(parent_inode_ptr, (void*)parent_inode_addr_in_fs, BLKSIZE);
+	inode_t* parent_node = (inode_t *) parent_inode_ptr;
+	parent_node->size = parent_node->size + sizeof(dirent_t);
+	memcpy((void*)parent_inode_addr_in_fs, (void*)parent_node, BLKSIZE);
+	printf("after parent directory entry size: %d\n", parent_inode_addr_in_fs->size);
+
+	// step 3.2
+	printf("before new directory entry size: %d\n", myfs->groupdescriptor.groupdescriptor_info.inode_table[new_imap_idx].size);
+	void *inodetable_ptr = malloc(BLKSIZE);
+	// read-in 
+	memcpy(inodetable_ptr, (void*)&myfs->groupdescriptor.groupdescriptor_info.inode_table[new_imap_idx], BLKSIZE);
+	inode_t* inodetable = (inode_t*)inodetable_ptr;
+	//modify
+	inodetable->size = 2 * sizeof(dirent_t);  // will contain 2 direntries ('.' and '..') at initialization
+	inodetable->blocks = 1;  // will only take up 1 block (for just 2 direntries: '.' and '..') at initialization 
+	for (u_int32_t i=1; i<15; ++i)  // initialize all data blocks to NULL (1 data block only needed at initialization)
+		inodetable->data[i] = NULL;
+	inodetable->data[0] = &(myfs->groupdescriptor.groupdescriptor_info.block_data[new_bmap_idx]);  
+	// write out to fs
+	memcpy((void*)&myfs->groupdescriptor.groupdescriptor_info.inode_table[new_imap_idx], (void*)inodetable, BLKSIZE);
+	printf("after new directory entry size: %d\n", myfs->groupdescriptor.groupdescriptor_info.inode_table[new_imap_idx].size);
+
+	// step 4
+	// data (dir)
+	void *dir_ptr = malloc(BLKSIZE);
+	// read-in
+	memcpy(dir_ptr, (void *)myfs->groupdescriptor.groupdescriptor_info.inode_table[cur_dir_inode_number].data[0], BLKSIZE);
+	dirent_t* dir = (dirent_t*)dir_ptr;
+	// set new directory to parent directory array
+	int new_dir_idx_in_parent_directory = (myfs->groupdescriptor.groupdescriptor_info.inode_table[cur_dir_inode_number].size/sizeof(dirent_t)) - 1;
+	dirent_t* new_dir = &dir[new_dir_idx_in_parent_directory];
+	{
+		new_dir->name_len = strlen(new_dirname);
+		new_dir->inode = new_dir_idx_in_parent_directory + 1;
+		new_dir->file_type = 2;
+		strcpy(new_dir->name, new_dirname);
+	}
+	// write out to fs
+	memcpy((void *)myfs->groupdescriptor.groupdescriptor_info.inode_table[cur_dir_inode_number].data[0], (void*)dir, BLKSIZE);
+
+
+	// step 5
+	void *new_dir_ptr = malloc(BLKSIZE);
+	// read-in
+	memcpy(new_dir_ptr, (void *)myfs->groupdescriptor.groupdescriptor_info.inode_table[new_imap_idx].data[0], BLKSIZE);
+	dirent_t* new_inode_dir = (dirent_t*)new_dir_ptr;
+	//modify
+	// dirent '.'
+	dirent_t* new_s_self = &new_inode_dir[0];
+	{
+		new_s_self->name_len = 1;
+		new_s_self->inode = new_imap_idx;
+		new_s_self->file_type = 2;
+		strcpy(new_s_self->name, ".");
+	}
+	// dirent '..'
+	dirent_t* new_s_parent = &new_inode_dir[1];
+	{
+		new_s_parent->name_len = 2;
+		new_s_parent->inode = cur_dir_inode_number;
+		new_s_parent->file_type = 2;
+		strcpy(new_s_parent->name, "..");
+	}
+	// write out to fs
+	memcpy((void *)myfs->groupdescriptor.groupdescriptor_info.inode_table[new_imap_idx].data[0], (void*)new_inode_dir, BLKSIZE);
+	return;
 }
 
 
