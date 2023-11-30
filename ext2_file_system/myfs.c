@@ -330,7 +330,7 @@ void printBinary(const char* charArray) {
 }
 
 int modify_map(block_t* map) {
-	for(int i = 0; map->data[i] != '\0'; i++) {
+	for(int i = 0; i < BLKSIZE; i++) {
 		char byteMap = map->data[i];
 		int j = 0;
 		while (j < 8) {
