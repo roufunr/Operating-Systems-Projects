@@ -324,12 +324,7 @@ void printBinary(const char* charArray) {
     }
 }
 
-block_t* read_imap(myfs_t* myfs) {
-	void* imap_ptr = malloc(BLKSIZE);
-	memcpy(imap_ptr, (void*)&myfs->imap, BLKSIZE);
-	block_t* imap = (block_t *) imap_ptr;
-	return imap;
-}
+
 
 int modify_map(block_t* map) {
 	for(int i = 0; map->data[i] != '\0'; i++) {
@@ -346,18 +341,42 @@ int modify_map(block_t* map) {
 	return -1; // no space to add new dir/file to this filesystem
 }
 
+block_t* read_imap(myfs_t* myfs) {
+	void* imap_ptr = malloc(BLKSIZE);
+	memcpy(imap_ptr, (void*)&myfs->imap, BLKSIZE);
+	block_t* imap = (block_t *) imap_ptr;
+	return imap;
+}
+
 void write_imap(myfs_t* myfs, block_t* imap) {
 	memcpy((void*)&myfs->imap, (void*)imap, BLKSIZE);
 }
 
+block_t* read_bmap(myfs_t* myfs) {
+	void* bmap_ptr = malloc(BLKSIZE);
+	memcpy(bmap_ptr, (void*)&myfs->bmap, BLKSIZE);
+	block_t* bmap = (block_t *) bmap_ptr;
+	return bmap;
+}
+
+void write_bmap(myfs_t* myfs, block_t* bmap) {
+	memcpy((void*)&myfs->bmap, (void*)bmap, BLKSIZE);
+}
 
 void my_creatdir(myfs_t* myfs, int cur_dir_inode_number, const char* new_dirname) {
-	printBinary(myfs->imap.data);
+	// step 1
 	block_t* imap = read_imap(myfs);
 	int new_imap_idx = modify_map(imap);
 	write_imap(myfs, imap);
-	printBinary(myfs->imap.data);
-	printf("New imap number %d\n", new_imap_idx);
+
+	// step 2
+	block_t* bmap = read_bmap(myfs);
+	int new_bmap_idx = modify_map(bmap);
+	write_bmap(myfs, bmap);
+
+	//step 3
+	
+	
 }
 
 
