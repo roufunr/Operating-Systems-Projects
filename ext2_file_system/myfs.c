@@ -174,7 +174,7 @@ myfs_t* my_mkfs(int size, int maxfiles) { // size in bytes //
 	inode_t* inodetable = (inode_t*)inodetable_ptr;
 	inodetable[root_inode_number].size = 2 * sizeof(dirent_t);  // will contain 2 direntries ('.' and '..') at initialization
 	inodetable[root_inode_number].blocks = 1;  // will only take up 1 block (for just 2 direntries: '.' and '..') at initialization 
-	for (u_int32_t i=1; i<15; ++i)  // initialize all data blocks to NULL (1 data block only needed at initialization)
+	for (uint i=1; i<15; ++i)  // initialize all data blocks to NULL (1 data block only needed at initialization)
 		inodetable[root_inode_number].data[i] = NULL;
 	inodetable[root_inode_number].data[0] = &(groupdescriptor->groupdescriptor_info.block_data[root_datablock_number]);  
 	// write out to fs
@@ -230,7 +230,7 @@ void my_dumpfs(myfs_t* myfs) {
 	printf("groupdescriptor_info.inode_table: %p\n", myfs->groupdescriptor.groupdescriptor_info.inode_table);
 	printf("groupdescriptor_info.block_data: %p\n", myfs->groupdescriptor.groupdescriptor_info.block_data);
 	for (size_t byte = 0; byte < BLKSIZE; ++byte) {
-		for (u_int32_t bit = 0; bit < 8; ++bit) {
+		for (uint bit = 0; bit < 8; ++bit) {
 			if (myfs->imap.data[byte] & (0x1 << bit)) {
 				int inode_number = byte*8 + bit;
 				if (inode_number < root_inode_number) {  // 0, 1 inode numbers are reserved for "invalid" and badsectors data, skip
@@ -252,7 +252,7 @@ void dump_dirinode(myfs_t* myfs, int inode_number, int level) {
 	inode_t* inodetable = myfs->groupdescriptor.groupdescriptor_info.inode_table;
 	LEVEL_TAB printf("  inode.size: %d\n", inodetable[inode_number].size);
 	LEVEL_TAB printf("  inode.blocks: %d\n", inodetable[inode_number].blocks);
-	for (u_int32_t block_nr = 0; block_nr < 11; ++block_nr) {  // 12 first blocks are direct (only deal with direct blocks for simplicity)
+	for (uint block_nr = 0; block_nr < 11; ++block_nr) {  // 12 first blocks are direct (only deal with direct blocks for simplicity)
 		if (inodetable[inode_number].data[block_nr] != NULL) {
 			int num_direntries = inodetable[inode_number].size / sizeof(dirent_t);  // get current number of direntries
 			LEVEL_TAB printf("    num_direntries: %d\n", num_direntries);
@@ -282,7 +282,7 @@ void dump_dirinode(myfs_t* myfs, int inode_number, int level) {
 
 void crawl_dirinode(myfs_t* myfs, int inode_number, int level) {
 	inode_t* inodetable = myfs->groupdescriptor.groupdescriptor_info.inode_table;
-	for (u_int32_t block_nr = 0; block_nr < 11; ++block_nr) {  // 12 first blocks are direct (only deal with direct blocks for simplicity)
+	for (uint block_nr = 0; block_nr < 11; ++block_nr) {  // 12 first blocks are direct (only deal with direct blocks for simplicity)
 		if (inodetable[inode_number].data[block_nr] != NULL) {
 			int num_direntries = inodetable[inode_number].size / sizeof(dirent_t);  // get current number of direntries
 			dirent_t* direntries = (dirent_t*)(inodetable[inode_number].data[block_nr]);
@@ -300,7 +300,7 @@ void crawl_dirinode(myfs_t* myfs, int inode_number, int level) {
 
 void my_crawlfs(myfs_t* myfs) {
 	for (size_t byte = 0; byte < BLKSIZE; ++byte) {
-		for (u_int32_t bit = 0; bit < 8; ++bit) {
+		for (uint bit = 0; bit < 8; ++bit) {
 			if (myfs->imap.data[byte] & (0x1 << bit)) {
 				int inode_number = byte*8 + bit;
 				if (inode_number < root_inode_number) {  // 0, 1 inode numbers are reserved for "invalid" and badsectors data, skip
@@ -395,7 +395,7 @@ void my_creatdir(myfs_t* myfs, int cur_dir_inode_number, const char* new_dirname
 	//modify
 	inodetable->size = 2 * sizeof(dirent_t);  // will contain 2 direntries ('.' and '..') at initialization
 	inodetable->blocks = 1;  // will only take up 1 block (for just 2 direntries: '.' and '..') at initialization 
-	for (u_int32_t i=1; i<15; ++i)  // initialize all data blocks to NULL (1 data block only needed at initialization)
+	for (uint i=1; i<15; ++i)  // initialize all data blocks to NULL (1 data block only needed at initialization)
 		inodetable->data[i] = NULL;
 	inodetable->data[0] = &(myfs->groupdescriptor.groupdescriptor_info.block_data[new_bmap_idx]);  
 	// write out to fs
